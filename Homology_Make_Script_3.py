@@ -5,6 +5,9 @@ Created on Sun Aug  2 13:24:07 2020
 
 @author: Soma
 """
+#Script Number 3
+#Reads in npy segmentation images
+#Creates csv cubical complex homology files
 
 #Import Libraries
 import numpy as np
@@ -20,15 +23,6 @@ path = pathlib.Path('__file__').parent.absolute()
 
 print(path)
 
-
-
-#The python script reads in the cubical image chunks that
-#center on the tumor region of interest,
-#Computes the cubical complex persistence homology
-#ANd outputs the Results
-
-#Only run this code after you have generated the cubical image chunks from 
-#the
     
 #Creating function to read in an image (array) and name
 #And Spitting out a csv cubical complex
@@ -63,7 +57,7 @@ def cube_hom(name, array):
     else :
         phom_2_form = phom_2
     
-    file_name = str(path) + '/python_hom/' + name + ".csv"
+    file_name = str(path) + '/Python_Hom/' + name + ".csv"
 
     # opening the csv file in 'w+' mode 
     file = open(file_name, 'w+', newline ='') 

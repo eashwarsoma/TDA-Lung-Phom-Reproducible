@@ -1,10 +1,15 @@
+#Script Number 1
+#Reads in DICOM and NifTii data and creates segmentation
+#Saves segmentation as RDS file
+#BEFORE RUNNING THIS SCRIPT, make sure you download the
+#Radiomics_DICOM and Radiogenomics_DICOM filders from the google drive link on the Github
+#ANd ensure that those folders are in the same folder as this script
+
+
+
 library(dplyr)
 
-#File to make segments from DICOM Data
-#Before running this script, make sure you have downloaded the DICOM images from google drive
-#This code will use the NIFTII segments to create the cubical tumor region of interest
-#We will save an RDS file
-#And importantly, save numpy files to compute homology in python
+
 
 
 
@@ -169,50 +174,7 @@ for (i in 1:length(segment.radg.slice.list[[144]])) {
 
 
 
-####Importing to Python####
-#Going to python
-# import numpy
-#For loop function
-#Don't load numpy with dplyr
-#Read back in the RDS files if needed
-devtools::unload("dplyr")
 
-segment.rad.slice.list <- readRDS("radiomics.segments.rds")
-segment.radg.slice.list <- readRDS("radiogenomics.segments.rds")
-
-
-library(reticulate)
-
-np = import("numpy")
-
-
-for (i in 1:length(segment.rad.slice.list)) {
-  
-  names1 <- gsub(".dcm-1.nii.gz", "" , files.rad.nift[[i]]) 
-  
-  names2 <- gsub("./Radiomics_Niftii//", "" , names1)
-  
-  
-  file.name <- paste("./Numpy_Arrays/", names2, ".npy", sep = "")
-  
-  np$save(file.name, r_to_py(segment.rad.slice.list[[i]]))
-  
-}
-
-
-
-for (i in 1:length(segment.radg.slice.list)) {
-  
-  names1 <- gsub(".dcm-1.nii.gz", "" , files.radg.nift[[i]]) 
-  
-  names2 <- gsub("./Radiogenomic_Niftii//", "" , names1)
-  
-  
-  file.name <- paste("./Numpy_Arrays/", names2, ".npy", sep = "")
-  
-  np$save(file.name, r_to_py(segment.radg.slice.list[[i]]))
-  
-}
 
 
 
