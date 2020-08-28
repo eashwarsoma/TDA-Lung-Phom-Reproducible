@@ -115,12 +115,13 @@ wilcox.test(surv50areas, surv100areas, alternative = "two.sided")
 wilcox.test(surv50areas, surv75areas, alternative = "two.sided")
 wilcox.test(surv75areas, surv100areas, alternative = "two.sided")
 
-#Mean
-mean(surv25areas)
-mean(surv50areas)
-mean(surv75areas)
-mean(surv100areas)
+#Median
+quantile(surv25areas)
+quantile(surv50areas)
+quantile(surv75areas)
+quantile(surv100areas)
 
+sd(surv25areas)
 
 ####Cox Analysis####
 #Survival Time
