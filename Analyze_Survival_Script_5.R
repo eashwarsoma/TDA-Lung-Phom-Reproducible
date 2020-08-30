@@ -8,6 +8,7 @@ library(survival)
 library(survminer)
 library(ggplot2)
 library(reshape)
+library(moments)
 
 #Reading in Results
 complete.lung.results <- readRDS("complete_lung_results.rds")
@@ -100,11 +101,21 @@ comb.data$survival_group <- factor(comb.data$survival_group,
 ggplot(comb.data, aes(filtration, features)) +
   geom_point() + facet_wrap(~survival_group) + theme_bw()
 
+write.csv(comb.data, "./Results/discretesurvgraphs.csv")
+
 #Collecting the moments of each group
 surv25mom <- cbind(as.data.frame(t(sapply(surv25, function (q) all.moments(q[,2], 4)))), "surv25")
+colnames(surv25mom) <- c("mom0", "mom1", "mom2", "mom3", "mom4", "surv.group")
 surv50mom <- cbind(as.data.frame(t(sapply(surv50, function (q) all.moments(q[,2], 4)))), "surv50")
+colnames(surv50mom) <- c("mom0", "mom1", "mom2", "mom3", "mom4", "surv.group")
 surv75mom <- cbind(as.data.frame(t(sapply(surv75, function (q) all.moments(q[,2], 4)))), "surv75")
+colnames(surv75mom) <- c("mom0", "mom1", "mom2", "mom3", "mom4", "surv.group")
 surv100mom <- cbind(as.data.frame(t(sapply(surv100, function (q) all.moments(q[,2], 4)))), "surv100")
+colnames(surv100mom) <- c("mom0", "mom1", "mom2", "mom3", "mom4", "surv.group")
+
+
+surv.all.mom <- rbind(surv25mom, surv50mom, surv75mom, surv100mom)
+write.csv(surv.all.mom, "./Results/allsurvmoments.csv")
 
 
 #####Analyzing moment 1 Across Survival Groups#####
@@ -331,15 +342,21 @@ tab$mom2 <- as.numeric(as.character(tab$mom2))
 tab$mom3 <- as.numeric(as.character(tab$mom3))
 tab$mom4 <- as.numeric(as.character(tab$mom4))
 
+#n = 542,  22 of the 565 patients did not have age information, 
+#1 patient had no stage information
+sapply(colnames(tab), function (x) sum(is.na(tab[[x]])))
+
 #MV Cox model
-#n = 542,  23 of the 565 patients did not have age information
 res.cox <- coxph(Surv(surv, dead.alive) ~ mom1 + mom2 + mom3 + mom4 + 
                    age + pixelcount + stage, data = tab)
 summary(res.cox)
 
-
+#Retaining tab as tab.supplement for the supplemental cox where we don't exclude 
+#Stage 0
+tab.supp <- tab
 
 #Redoing the model without stage 0 patients, who cause an infinite fit for stage 0 patients
+which(tab$stage == "0")
 #Result is no different but prevents the erraneous 0 to inf HR for stage 0 patients
 #n= 536
 tab.diff <- tab[-which(tab$stage == "0"), ]
@@ -353,7 +370,8 @@ MV.Cox.Ob <- data.frame(cbind(exp(coefficients(res.cox)), exp(confint(res.cox)))
 #Adding pvalues
 MV.Cox.Ob <- cbind(MV.Cox.Ob, summary(res.cox)$coefficients[, 5])
 
-#Removing erraneous stage 0 var
+#Removing stage 0 var, as that factor was not analyzed in tab.diff
+#Stage 0 result shown in supplement
 MV.Cox.Ob <- na.omit(MV.Cox.Ob)
 colnames(MV.Cox.Ob) <- c("HR", "LL", "UL", "pval")
 labs <- rownames(MV.Cox.Ob)
@@ -400,12 +418,13 @@ ggplot(data=UV.Cox.Ob, aes(x=label, y=HR, ymin=LL, ymax=UL)) +
   xlab("Label") + ylab("Mean (95% CI)") 
 theme_bw()  # use a white background
 
+write.csv(UV.Cox.Ob, "./Results/UVCoxModel.csv")
 
 
 ####KM Curves Analysis####
 tab.KM <- tab.diff[, 1:3]
 quart.mom <- quantile(tab.KM[,3])
-
+quart.mom
 
 #Adding A Moment 1 quartile Variable
 tab.KM[,4] <- ifelse(tab.KM[, 3] <= quart.mom[2], "Mom25",
@@ -420,12 +439,58 @@ fit <- survfit(Surv(surv, dead.alive) ~ quart, data = tab.KM)
 
 
 
-ggsurvplot(fit, data = tab.KM, conf.int = TRUE)
+ggsurvplot(fit, data = tab.KM, conf.int = F)
+
+
+write.csv(tab.KM, "./Results/KMCurves.csv")
 
 
 
+####Supplemental Cox Keeping Stage 0####
+#Redoing full Cox but with tab.supp, which keeps the stage 0 patients
+res.cox.sup <- coxph(Surv(surv, dead.alive) ~ mom1 + mom2 + mom3 + mom4 + 
+                   age + pixelcount + stage, data = tab.supp)
+summary(res.cox.sup)
+
+#Creating easy sumdmary data frame for forest plot
+sup.MV.Cox.Ob <- data.frame(cbind(exp(coefficients(res.cox.sup)), 
+                                  exp(confint(res.cox.sup))))
+
+#Adding pvalues
+sup.MV.Cox.Ob <- cbind(sup.MV.Cox.Ob, summary(res.cox.sup)$coefficients[, 5])
+
+#Removing stage 0 var, as that factor was not analyzed in tab.diff
+#Stage 0 result shown in supplement
+colnames(sup.MV.Cox.Ob) <- c("HR", "LL", "UL", "pval")
+labs <- rownames(sup.MV.Cox.Ob)
+sup.MV.Cox.Ob$label <- labs
+
+write.csv(sup.MV.Cox.Ob, "./Results/supMVCoxModel.csv")
+
+#Univartiate Sup Cox Analysis
+vars.sup <- c("mom1", "mom2", "mom3", "mom4", "age", "pixelcount", "stage")
 
 
+#Creating easy sumdmary data frame for forest plot
+uv.list.holder.sup <- list()
+for (i in 1:length(vars.sup)) {
+  form <- as.formula(paste("Surv(surv, dead.alive) ~ ", vars.sup[i], sep = ""))
+  cox.uv <- coxph(form, data = tab.diff)
+  UV.Cox.row <- data.frame(cbind(exp(coefficients(cox.uv)), 
+                                 exp(confint(cox.uv)),
+                                 summary(cox.uv)$coefficients[, 5]))
+  uv.list.holder.sup[[i]] <- UV.Cox.row
+  
+}
+
+sup.UV.Cox.Ob <- do.call(rbind, uv.list.holder.sup)
+
+colnames(sup.UV.Cox.Ob) <- c("HR", "LL", "UL", "pval")
+labs <- rownames(sup.UV.Cox.Ob)
+sup.UV.Cox.Ob$label <- labs
+
+
+write.csv(sup.UV.Cox.Ob, "./Results/supUVCoxModel.csv")
 
 
 

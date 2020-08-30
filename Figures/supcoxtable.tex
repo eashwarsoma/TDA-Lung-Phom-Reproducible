@@ -1,0 +1,23 @@
+\captionsetup[table]{labelformat=empty,skip=1pt}
+\begin{longtable}{lcccc}
+\caption*{
+\large Cox Proportional Hazard Model\\ 
+\small \\ 
+} \\ 
+\toprule
+ & Univariate Model HR & p-value & Multivariate Model HR & p-value \\ 
+\midrule
+Age & 1.018 (1.007-1.029) & 0.0019 & 1.027 (1.015-1.039) & $8.2 \times 10^{-6}$ \\ 
+Moment 1 & 1.02 (1.008-1.031) & 0.0008 & 1.097 (1.036-1.162) & 0.00160 \\ 
+Moment 2 & 1.004 (0.988-1.021) & 0.6000 & 0.853 (0.674-1.079) & 0.18000 \\ 
+Moment 3 & 0.993 (0.953-1.035) & 0.7300 & 1.065 (0.486-2.333) & 0.87000 \\ 
+Moment 4 & 0.985 (0.914-1.062) & 0.7000 & 1.096 (0.53-2.268) & 0.80000 \\ 
+Stage 0 vs I & NA (NA-NA) & NA & 0 (0-Inf) & 0.99000 \\ 
+Stage II vs I & 1.249 (0.884-1.765) & 0.2100 & 1.052 (0.728-1.52) & 0.79000 \\ 
+Stage IIIa vs I & 1.695 (1.304-2.203) & $8.0 \times 10^{-5}$ & 1.712 (1.295-2.264) & 0.00016 \\ 
+Stage IIIb vs I & 1.626 (1.272-2.077) & 0.0001 & 1.458 (1.108-1.918) & 0.00710 \\ 
+Stage IV vs I & 1.279 (0.406-4.028) & 0.6700 & 1.925 (0.606-6.115) & 0.27000 \\ 
+Tumor Image Size & 1.016 (1.001-1.032) & 0.0360 & 1.016 (0.983-1.049) & 0.34000 \\ 
+\bottomrule
+\end{longtable}
+
