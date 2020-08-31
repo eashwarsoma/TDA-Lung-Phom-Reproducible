@@ -12,6 +12,8 @@ library(ggpubr)
 library(DiagrammeR)
 library(DiagrammeRsvg)
 library(rsvg)
+library(tableone)
+
 
 #### Flow Diagram####
 prism <- grViz("digraph flowchart {
@@ -44,6 +46,59 @@ prism <- grViz("digraph flowchart {
 
 export_svg(prism) %>% charToRaw %>% 
   rsvg_png(., file = "./Figures/prismatic.png", width = 2400, height = 2000)
+
+
+
+####Table One####
+tad.pats <- read.csv("./Results/tab1data.csv")
+tad.pats$cohort <- NA
+
+#First 421 patients are in rad, remaining are in radg
+#The 6 stage 0 patients removed were all from radg
+tad.pats$cohort[1:421] <- "NSCLC-Radiomics"
+tad.pats$cohort[422:559] <- "NSCLC-Radiogenomics"
+
+#Removing erraneous first column
+tad.pats <- tad.pats[,-1]
+
+colnames(tad.pats) <- c("Survival", "Vital Status", "Moment 1", "Moment 2", 
+                        "Moment 3", "Moment 4", "Tumor Image Size", "Age", 
+                        "Stage", "Cohort")
+
+tad.pats$`Vital Status` <- case_when(tad.pats$`Vital Status` == "1" ~ "Dead",
+                                     tad.pats$`Vital Status` == "0" ~ "Alive")
+
+tad.pats$`Vital Status` <- as.factor(tad.pats$`Vital Status`)
+tad.pats$`Cohort` <- as.factor(tad.pats$`Cohort`)
+
+
+tabone <- CreateTableOne(vars = c("Vital Status", "Moment 1", "Moment 2", 
+                        "Moment 3", "Moment 4", "Tumor Image Size", "Age", 
+                        "Stage"),
+               strata = "Cohort", 
+               factorVars = c("Stage", "Vital Status"), 
+               addOverall = TRUE, data = tad.pats)
+
+table.mat <- print(tabone, nonnormal = c("Moment 1", "Moment 2", 
+                        "Moment 3", "Moment 4", "Tumor Image Size"), missing = TRUE)
+
+table.mat.df <- as.data.frame(table.mat)
+table.mat.df$label <- c("Total Sample Size", "Vital Status (% Dead)", "Moment 1",
+                        "Moment 2", "Moment 3", "Moment 4", "Tumor Image Size", "Age",
+                        "Stage", "Stage I", "Stage II", "Stage IIIa", "Stage IIIb", 
+                        "Stage IV")
+
+#Removing the test column
+table.mat.df <- table.mat.df[,-5]
+
+colnames(table.mat.df) <- c("Whole Cohort", "NSCLC-Radiogenomics", "NSCLC-Radiomics", 
+                            "p-value", "Proportion Missing", "label")
+
+table.mat.df.gt <- table.mat.df %>% gt(rowname_col = "label")
+table.mat.df.gt
+
+gtsave(table.mat.df.gt, "./Figures/tableone.tex")
+
 
 
 ####Discrete Analysis

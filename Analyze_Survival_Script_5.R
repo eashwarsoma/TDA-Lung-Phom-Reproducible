@@ -361,6 +361,9 @@ which(tab$stage == "0")
 #Result is no different but prevents the erraneous 0 to inf HR for stage 0 patients
 #n= 536
 tab.diff <- tab[-which(tab$stage == "0"), ]
+
+write.csv(tab.diff, "./Results/tab1data.csv")
+
 res.cox <- coxph(Surv(surv, dead.alive) ~ mom1 + mom2 + mom3 + mom4 + 
                    age + pixelcount + stage, data = tab.diff)
 summary(res.cox)
@@ -374,6 +377,21 @@ ggsave("./Figures/schoenfeld.png",
        arrangeGrob(grobs = schoenfeld), scale = 1, 
        width = 8, height = 6, units = "in",
        dpi = 400, limitsize = TRUE)
+
+#Correlation plot between moment 1 and tumor image size, Supplement
+cor <- round(cor(tab.diff$mom1, tab.diff$pixelcount)^2, 3)
+corgplot <- ggplot(data=tab.diff, aes(x=mom1, y=pixelcount)) +
+  geom_point(size=.5, shape=21) +
+  annotate(geom="text", x=3, y=30, label=paste(cor), color="red") +
+  theme_bw() +   
+  labs(title = "Image Size vs Moment 1", x = "Moment 1 of all Feature Curves", 
+       y = "Tumor Image Sizes of All Feature Curves") + 
+  theme(plot.title = element_text(hjust = 0.5))
+  
+ggsave("./Figures/coxforest.png", plot = coxforest,
+       scale = 1, width = 8, height = 6, units = "in",
+       dpi = 400, limitsize = TRUE)
+
 
 
 
@@ -504,7 +522,6 @@ sup.UV.Cox.Ob$label <- labs
 
 
 write.csv(sup.UV.Cox.Ob, "./Results/supUVCoxModel.csv")
-
 
 
 
