@@ -1,6 +1,9 @@
 #Script Number 4
 #Converts Raw Homology to Feature Curve
 #Consolidates Clinical Data and Feature Curve into 1 RDS file
+library(dplyr)
+library(anytime)
+
 
 #Getting file names for homolgy
 hom.csv <- list.files(path="./Python_Hom/", full.names = TRUE, all.files	
@@ -110,7 +113,6 @@ radg.ind <- do.call(rbind, radg.ind)
 clinic.radg.lung <- clinic.radg.lung[which(radg.ind > 0), ]
 
 
-library(dplyr)
 
 #Creating an overall stage variable
 clinic.radg.lung <- clinic.radg.lung %>%
@@ -164,7 +166,6 @@ clinic.radg.lung$Time.to.Death..days. <- as.numeric(as.character(clinic.radg.lun
 #Unlike the radiomics set where time was included for last follow up
 #This alternate survival was calculated so that there is consistency between data sets
 #Modifying Dead/Alive to Correct number
-library(anytime)
 clinic.radg.lung$mod.surv <- anydate(clinic.radg.lung$Date.of.Last.Known.Alive) - 
                               anydate(clinic.radg.lung$CT.Date)
 

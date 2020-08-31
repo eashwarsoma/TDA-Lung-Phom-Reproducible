@@ -5,10 +5,10 @@
 #Radiomics_DICOM and Radiogenomics_DICOM filders from the google drive link on the Github
 #ANd ensure that those folders are in the same folder as this script
 
-
-
 library(dplyr)
-
+library(oro.dicom)
+library(oro.nifti)
+library(RNifti)
 
 
 

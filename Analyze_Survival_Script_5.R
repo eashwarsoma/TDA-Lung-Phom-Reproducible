@@ -3,12 +3,13 @@
 #Analyzes Survival by discrete and continuos method
 library(plyr)
 library(dplyr)
-library(pracma)
 library(survival)
 library(survminer)
 library(ggplot2)
 library(reshape)
 library(moments)
+library(gridExtra)
+
 
 #Reading in Results
 complete.lung.results <- readRDS("complete_lung_results.rds")
@@ -363,6 +364,18 @@ tab.diff <- tab[-which(tab$stage == "0"), ]
 res.cox <- coxph(Surv(surv, dead.alive) ~ mom1 + mom2 + mom3 + mom4 + 
                    age + pixelcount + stage, data = tab.diff)
 summary(res.cox)
+
+#SHoenfeld resideual graph
+schoenfeld <- ggcoxzph(cox.zph(res.cox), font.main = 6,font.submain = 6,
+                       font.caption = 6,font.x = 6,font.y = 6,
+                       font.tickslab = 6,font.legend = 6)
+
+ggsave("./Figures/schoenfeld.png", 
+       arrangeGrob(grobs = schoenfeld), scale = 1, 
+       width = 8, height = 6, units = "in",
+       dpi = 400, limitsize = TRUE)
+
+
 
 #Creating easy sumdmary data frame for forest plot
 MV.Cox.Ob <- data.frame(cbind(exp(coefficients(res.cox)), exp(confint(res.cox))))
