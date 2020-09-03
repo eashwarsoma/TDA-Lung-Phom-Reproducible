@@ -28,11 +28,21 @@ for (i in 1:length(hom.list)) {
   
 }
 
+#Getting absolute min and max
+abs.min <- min(unlist(lapply(hom.list, function (x) min(x[,c(2,3)]))))
+abs.max <- max(unlist(lapply(hom.list, function (x) max(x[,c(2,3)]))))
+
+
 #Normalizing all HU unit values to 0 to 1
+#Note for normalization:
+#Since the final product is a "topological feature curve"
+#Which compared # of features vs filtration distance
+#It doesn't matter how or where normalization (normalizing DICOM, normalizing here, etc.)
+#As long as it is a linear transformation, the total number of topological features
+#And their relative position on the filtration x axis will be the same
 for (i in 1:length(hom.list)) {
   hom.list[[i]] <- cbind(hom.list[[i]][,1], 
-                         (hom.list[[i]][,c(2,3)] - min(hom.list[[i]][,c(2,3)]))/(max(hom.list[[i]][,c(2,3)]) - 
-                                                                                   min(hom.list[[i]][,c(2,3)])))
+                         ((hom.list[[i]][,c(2,3)] - abs.min)/(abs.max - abs.min)))
   colnames(hom.list[[i]]) <- c("dimension", "birth", "death")
 }
 

@@ -297,20 +297,15 @@ dead.alive <- do.call(rbind, lapply(complete.lung.results, function (x) x[["dead
 mom <- do.call(rbind, lapply(complete.lung.results, function (q) 
   all.moments(q[[1]][,2], order.max = 4)))
 
-#Scaling Values 0 to 50...more comparable with age
-#Scale could be normalized to anything, 
-#Just changes the hazard ratio value but does not impact significance
-#Or meaning of results
-mom1 <- normalize(mom[,2]) * 50
-mom2 <- normalize(mom[,3]) * 50
-mom3 <- normalize(mom[,4]) * 50
-mom4 <- normalize(mom[,5]) * 50
+mom1 <- mom[,2]
+mom2 <- mom[,3]
+mom3 <- mom[,4]
+mom4 <- mom[,5]
 
 #Pixel Count 
 pixelcount <- do.call(rbind, lapply(segment.slices.rds, function (x) 
   length(x)*dim(x[[1]])[1]*dim(x[[1]])[1]))
-#Scaling Values 0 to 50...more comparable with age
-pixelcount <- normalize(pixelcount) * 50
+
 
 #Age
 age.rad <- do.call(rbind, lapply(complete.lung.results[1:421], function (x) x[["age"]])) 
@@ -326,12 +321,22 @@ stage <- case_when(stage == 1 ~ "I",
                    stage == 4 ~ "IIIb",
                      TRUE ~ as.character(stage))
 
+#Adding Sex
+sex.r <- do.call(rbind, lapply(complete.lung.results[1:421], function (x) as.character(x[["gender"]])))
+sex.rg <- do.call(rbind, lapply(complete.lung.results[422:565], function (x) as.character(x[["Gender"]])))
+sex <- c(sex.r, sex.rg)
+sex <- case_when(sex == "male" ~ "Male",
+                 sex == "female" ~ "Female", 
+                 TRUE ~ sex)
+
+
+
 #Consolidating into single table
 tab <- as.data.frame(cbind(surv, dead.alive, mom1, mom2, mom3, 
-                           mom4, pixelcount, age, stage))
+                           mom4, pixelcount, age, stage, sex))
 
 names(tab) <- c("surv", "dead.alive", "mom1", "mom2", "mom3", "mom4", 
-                "pixelcount", "age", "stage")
+                "pixelcount", "age", "stage", "sex")
 
 tab$stage <- factor(tab$stage, levels = c("I", "II", "IIIa", "IIIb", "IV", "0"))
 tab$surv <- as.numeric(as.character(tab$surv))
@@ -343,13 +348,31 @@ tab$mom2 <- as.numeric(as.character(tab$mom2))
 tab$mom3 <- as.numeric(as.character(tab$mom3))
 tab$mom4 <- as.numeric(as.character(tab$mom4))
 
+
+
+
+#Scaling Values 0 to 50...more comparable with age
+#Scale could be normalized to anything, 
+#Just changes the hazard ratio value but does not impact significance
+#Or meaning of results
+tab$mom1 <- normalize(mom[,2]) * 50
+tab$mom2 <- normalize(mom[,3]) * 50
+tab$mom3 <- normalize(mom[,4]) * 50
+tab$mom4 <- normalize(mom[,5]) * 50
+#Scaling Values 0 to 50...more comparable with age and moment
+tab$pixelcount <- normalize(tab$pixelcount) * 50
+
+#Removing Stage 0 for table 1
+write.csv(tab[-which(tab$stage == "0"),], "./Results/tab1data.csv")
+
+
 #n = 542,  22 of the 565 patients did not have age information, 
 #1 patient had no stage information
 sapply(colnames(tab), function (x) sum(is.na(tab[[x]])))
 
 #MV Cox model
 res.cox <- coxph(Surv(surv, dead.alive) ~ mom1 + mom2 + mom3 + mom4 + 
-                   age + pixelcount + stage, data = tab)
+                   age + pixelcount + stage + sex, data = tab)
 summary(res.cox)
 
 #Retaining tab as tab.supplement for the supplemental cox where we don't exclude 
@@ -362,16 +385,21 @@ which(tab$stage == "0")
 #n= 536
 tab.diff <- tab[-which(tab$stage == "0"), ]
 
-write.csv(tab.diff, "./Results/tab1data.csv")
+#Dropping the stage 0 level
+tab.diff$stage <- droplevels(tab.diff$stage)
+
+
 
 res.cox <- coxph(Surv(surv, dead.alive) ~ mom1 + mom2 + mom3 + mom4 + 
-                   age + pixelcount + stage, data = tab.diff)
+                   age + pixelcount + stage + sex, data = tab.diff)
 summary(res.cox)
 
 #SHoenfeld resideual graph
 schoenfeld <- ggcoxzph(cox.zph(res.cox), font.main = 6,font.submain = 6,
                        font.caption = 6,font.x = 6,font.y = 6,
                        font.tickslab = 6,font.legend = 6)
+
+schoenfeld
 
 ggsave("./Figures/schoenfeld.png", 
        arrangeGrob(grobs = schoenfeld), scale = 1, 
@@ -382,13 +410,14 @@ ggsave("./Figures/schoenfeld.png",
 cor <- round(cor(tab.diff$mom1, tab.diff$pixelcount)^2, 3)
 corgplot <- ggplot(data=tab.diff, aes(x=mom1, y=pixelcount)) +
   geom_point(size=.5, shape=21) +
-  annotate(geom="text", x=3, y=30, label=paste(cor), color="red") +
+  annotate(geom="text", x=3, y=54, label=paste("R^2=", cor), color="black") +
   theme_bw() +   
   labs(title = "Image Size vs Moment 1", x = "Moment 1 of all Feature Curves", 
        y = "Tumor Image Sizes of All Feature Curves") + 
   theme(plot.title = element_text(hjust = 0.5))
+corgplot
   
-ggsave("./Figures/coxforest.png", plot = coxforest,
+ggsave("./Figures/cormom1size.png", plot = corgplot,
        scale = 1, width = 8, height = 6, units = "in",
        dpi = 400, limitsize = TRUE)
 
@@ -419,7 +448,7 @@ ggplot(data=MV.Cox.Ob, aes(x=label, y=HR, ymin=LL, ymax=UL)) +
 write.csv(MV.Cox.Ob, "./Results/MVCoxModel.csv")
 
 ####Univartiate Cox Analysis####
-vars <- c("mom1", "mom2", "mom3", "mom4", "age", "pixelcount", "stage")
+vars <- c("mom1", "mom2", "mom3", "mom4", "age", "pixelcount", "stage", "sex")
 
 
 #Creating easy sumdmary data frame for forest plot
@@ -480,7 +509,7 @@ write.csv(tab.KM, "./Results/KMCurves.csv")
 ####Supplemental Cox Keeping Stage 0####
 #Redoing full Cox but with tab.supp, which keeps the stage 0 patients
 res.cox.sup <- coxph(Surv(surv, dead.alive) ~ mom1 + mom2 + mom3 + mom4 + 
-                   age + pixelcount + stage, data = tab.supp)
+                   age + pixelcount + stage + sex, data = tab.supp)
 summary(res.cox.sup)
 
 #Creating easy sumdmary data frame for forest plot
@@ -499,7 +528,7 @@ sup.MV.Cox.Ob$label <- labs
 write.csv(sup.MV.Cox.Ob, "./Results/supMVCoxModel.csv")
 
 #Univartiate Sup Cox Analysis
-vars.sup <- c("mom1", "mom2", "mom3", "mom4", "age", "pixelcount", "stage")
+vars.sup <- c("mom1", "mom2", "mom3", "mom4", "age", "pixelcount", "stage", "sex")
 
 
 #Creating easy sumdmary data frame for forest plot
