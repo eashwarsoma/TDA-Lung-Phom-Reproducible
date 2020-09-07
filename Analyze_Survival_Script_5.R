@@ -9,6 +9,7 @@ library(ggplot2)
 library(reshape)
 library(moments)
 library(gridExtra)
+library(rstatix)
 
 
 #Reading in Results
@@ -119,6 +120,15 @@ surv.all.mom <- rbind(surv25mom, surv50mom, surv75mom, surv100mom)
 write.csv(surv.all.mom, "./Results/allsurvmoments.csv")
 
 
+#Creating one super table with all data
+all.surv.moments.melt <- melt(surv.all.mom)
+colnames(all.surv.moments.melt) <- c("surv.group", "moment", "feature.count")
+all.surv.moments.melt.rem.zero <- subset(all.surv.moments.melt, moment != "mom0")
+all.surv.moments.melt.rem.zero$surv.group <- factor(all.surv.moments.melt.rem.zero$surv.group, 
+                                                    levels = c("surv25", "surv50", 
+                                                               "surv75", "surv100"))
+
+
 #####Analyzing moment 1 Across Survival Groups#####
 mom1tab <- cbind(quantile(surv25mom[,2]), quantile(surv50mom[,2]), 
                  quantile(surv75mom[,2]), quantile(surv100mom[,2]))
@@ -126,29 +136,23 @@ colnames(mom1tab) <- c("surv25", "surv50", "surv75", "surv100")
 mom1tab <- cbind(quantile(surv25mom[,2]), quantile(surv50mom[,2]), 
                  quantile(surv75mom[,2]), quantile(surv100mom[,2]))
 
-mom1comp <- matrix(nrow = 6, ncol = 2)
 #Comparing moment 1 distributions among survival groups
-mom1comp[1, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,2], surv100mom[,2], 
-                                               alternative = "two.sided")[c(1,3)])
-mom1comp[2, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,2], surv75mom[,2], 
-                                               alternative = "two.sided")[c(1,3)])
-mom1comp[3, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,2], surv50mom[,2], 
-                                               alternative = "two.sided")[c(1,3)])
-mom1comp[4, 1:2] <- do.call(cbind, wilcox.test(surv50mom[,2], surv100mom[,2], 
-                                               alternative = "two.sided")[c(1,3)])
-mom1comp[5, 1:2] <- do.call(cbind, wilcox.test(surv50mom[,2], surv75mom[,2], 
-                                               alternative = "two.sided")[c(1,3)])
-mom1comp[6, 1:2] <- do.call(cbind, wilcox.test(surv75mom[,2], surv100mom[,2], 
-                                               alternative = "two.sided")[c(1,3)])
+#Kruskal Wallis
+mom1.kw <- all.surv.moments.melt.rem.zero %>%
+  subset(moment == "mom1") %>%
+  kruskal_test(feature.count ~ surv.group)
 
-rownames(mom1comp) <- c("surv25 vs surv100", 
-                        "surv25 vs surv75",
-                        "surv25 vs surv50",
-                        "surv50 vs surv100",
-                        "surv50 vs surv75",
-                        "surv75 vs surv100")
+#Dunn's Test
+mom1.dt <- all.surv.moments.melt.rem.zero %>%
+  subset(moment == "mom1") %>%
+  dunn_test(feature.count ~ surv.group, p.adjust.method = "bonferroni")
 
-colnames(mom1comp) <- c("mom1stat", "mom1p-val")
+mom1comp <- rbind(
+cbind(as.matrix(mom1.kw[, -c(2, 4, 6)]), NA, NA, NA),
+c("y", "group1", "group2", "stat", "p", "p.adj"),
+as.matrix(mom1.dt[, -c(4, 5, 9)])
+)
+
 
 #Writing results to csv
 write.csv(mom1tab, "./Results/mom1table.csv")
@@ -162,29 +166,24 @@ colnames(mom2tab) <- c("surv25", "surv50", "surv75", "surv100")
 mom2tab <- cbind(quantile(surv25mom[,3]), quantile(surv50mom[,3]), 
                  quantile(surv75mom[,3]), quantile(surv100mom[,3]))
 
-mom2comp <- matrix(nrow = 6, ncol = 2)
 #Comparing moment 2 distributions among survival groups
-mom2comp[1, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,3], surv100mom[,3], 
-                                               alternative = "two.sided")[c(1,3)])
-mom2comp[2, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,3], surv75mom[,3], 
-                                               alternative = "two.sided")[c(1,3)])
-mom2comp[3, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,3], surv50mom[,3], 
-                                               alternative = "two.sided")[c(1,3)])
-mom2comp[4, 1:2] <- do.call(cbind, wilcox.test(surv50mom[,3], surv100mom[,3], 
-                                               alternative = "two.sided")[c(1,3)])
-mom2comp[5, 1:2] <- do.call(cbind, wilcox.test(surv50mom[,3], surv75mom[,3], 
-                                               alternative = "two.sided")[c(1,3)])
-mom2comp[6, 1:2] <- do.call(cbind, wilcox.test(surv75mom[,3], surv100mom[,3], 
-                                               alternative = "two.sided")[c(1,3)])
+#Kruskal Wallis
+mom2.kw <- all.surv.moments.melt.rem.zero %>%
+  subset(moment == "mom2") %>%
+  kruskal_test(feature.count ~ surv.group)
 
-rownames(mom2comp) <- c("surv25 vs surv100", 
-                        "surv25 vs surv75",
-                        "surv25 vs surv50",
-                        "surv50 vs surv100",
-                        "surv50 vs surv75",
-                        "surv75 vs surv100")
+#Dunn's Test
+mom2.dt <- all.surv.moments.melt.rem.zero %>%
+  subset(moment == "mom2") %>%
+  dunn_test(feature.count ~ surv.group, p.adjust.method = "bonferroni")
 
-colnames(mom2comp) <- c("mom2stat", "mom2p-val")
+mom2comp <- rbind(
+  cbind(as.matrix(mom2.kw[, -c(2, 4, 6)]), NA, NA, NA),
+  c("y", "group1", "group2", "stat", "p", "p.adj"),
+  as.matrix(mom2.dt[, -c(4, 5, 9)])
+)
+
+
 
 #Writing results to csv
 write.csv(mom2tab, "./Results/mom2table.csv")
@@ -198,29 +197,22 @@ colnames(mom3tab) <- c("surv25", "surv50", "surv75", "surv100")
 mom3tab <- cbind(quantile(surv25mom[,4]), quantile(surv50mom[,4]), 
                  quantile(surv75mom[,4]), quantile(surv100mom[,4]))
 
-mom3comp <- matrix(nrow = 6, ncol = 2)
-#Comparing moment 2 distributions among survival groups
-mom3comp[1, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,4], surv100mom[,4], 
-                                               alternative = "two.sided")[c(1,3)])
-mom3comp[2, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,4], surv75mom[,4], 
-                                               alternative = "two.sided")[c(1,3)])
-mom3comp[3, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,4], surv50mom[,4], 
-                                               alternative = "two.sided")[c(1,3)])
-mom3comp[4, 1:2] <- do.call(cbind, wilcox.test(surv50mom[,4], surv100mom[,4], 
-                                               alternative = "two.sided")[c(1,3)])
-mom3comp[5, 1:2] <- do.call(cbind, wilcox.test(surv50mom[,4], surv75mom[,4], 
-                                               alternative = "two.sided")[c(1,3)])
-mom3comp[6, 1:2] <- do.call(cbind, wilcox.test(surv75mom[,4], surv100mom[,4], 
-                                               alternative = "two.sided")[c(1,3)])
+#Comparing moment 3 distributions among survival groups
+#Kruskal Wallis
+mom3.kw <- all.surv.moments.melt.rem.zero %>%
+  subset(moment == "mom3") %>%
+  kruskal_test(feature.count ~ surv.group)
 
-rownames(mom3comp) <- c("surv25 vs surv100", 
-                        "surv25 vs surv75",
-                        "surv25 vs surv50",
-                        "surv50 vs surv100",
-                        "surv50 vs surv75",
-                        "surv75 vs surv100")
+#Dunn's Test
+mom3.dt <- all.surv.moments.melt.rem.zero %>%
+  subset(moment == "mom3") %>%
+  dunn_test(feature.count ~ surv.group, p.adjust.method = "bonferroni")
 
-colnames(mom3comp) <- c("mom3stat", "mom3p-val")
+mom3comp <- rbind(
+  cbind(as.matrix(mom3.kw[, -c(2, 4, 6)]), NA, NA, NA),
+  c("y", "group1", "group2", "stat", "p", "p.adj"),
+  as.matrix(mom3.dt[, -c(4, 5, 9)])
+)
 
 #Writing results to csv
 write.csv(mom3tab, "./Results/mom3table.csv")
@@ -241,30 +233,22 @@ colnames(mom4tab) <- c("surv25", "surv50", "surv75", "surv100")
 mom4tab <- cbind(quantile(surv25mom[,5]), quantile(surv50mom[,5]), 
                  quantile(surv75mom[,5]), quantile(surv100mom[,5]))
 
-mom4comp <- matrix(nrow = 6, ncol = 2)
-#Comparing moment 4 distributions among survival groups
-mom4comp[1, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,5], surv100mom[,5], 
-                                            alternative = "two.sided")[c(1,3)])
-mom4comp[2, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,5], surv75mom[,5], 
-                                               alternative = "two.sided")[c(1,3)])
-mom4comp[3, 1:2] <- do.call(cbind, wilcox.test(surv25mom[,5], surv50mom[,5], 
-                                               alternative = "two.sided")[c(1,3)])
-mom4comp[4, 1:2] <- do.call(cbind, wilcox.test(surv50mom[,5], surv100mom[,5], 
-                                               alternative = "two.sided")[c(1,3)])
-mom4comp[5, 1:2] <- do.call(cbind, wilcox.test(surv50mom[,5], surv75mom[,5], 
-                                               alternative = "two.sided")[c(1,3)])
-mom4comp[6, 1:2] <- do.call(cbind, wilcox.test(surv75mom[,5], surv100mom[,5], 
-                                               alternative = "two.sided")[c(1,3)])
+#Comparing moment 3 distributions among survival groups
+#Kruskal Wallis
+mom4.kw <- all.surv.moments.melt.rem.zero %>%
+  subset(moment == "mom4") %>%
+  kruskal_test(feature.count ~ surv.group)
 
-rownames(mom4comp) <- c("surv25 vs surv100", 
-                        "surv25 vs surv75",
-                        "surv25 vs surv50",
-                        "surv50 vs surv100",
-                        "surv50 vs surv75",
-                        "surv75 vs surv100")
+#Dunn's Test
+mom4.dt <- all.surv.moments.melt.rem.zero %>%
+  subset(moment == "mom4") %>%
+  dunn_test(feature.count ~ surv.group, p.adjust.method = "bonferroni")
 
-colnames(mom4comp) <- c("mom4stat", "mom4p-val")
-
+mom4comp <- rbind(
+  cbind(as.matrix(mom4.kw[, -c(2, 4, 6)]), NA, NA, NA),
+  c("y", "group1", "group2", "stat", "p", "p.adj"),
+  as.matrix(mom4.dt[, -c(4, 5, 9)])
+)
 
 #Writing results to csv
 write.csv(mom4tab, "./Results/mom4table.csv")
@@ -349,6 +333,8 @@ tab$mom3 <- as.numeric(as.character(tab$mom3))
 tab$mom4 <- as.numeric(as.character(tab$mom4))
 
 
+#Removing Stage 0 for table 1
+write.csv(tab[-which(tab$stage == "0"),], "./Results/tab1data.csv")
 
 
 #Scaling Values 0 to 50...more comparable with age
@@ -362,8 +348,7 @@ tab$mom4 <- normalize(mom[,5]) * 50
 #Scaling Values 0 to 50...more comparable with age and moment
 tab$pixelcount <- normalize(tab$pixelcount) * 50
 
-#Removing Stage 0 for table 1
-write.csv(tab[-which(tab$stage == "0"),], "./Results/tab1data.csv")
+
 
 
 #n = 542,  22 of the 565 patients did not have age information, 
@@ -393,6 +378,9 @@ tab.diff$stage <- droplevels(tab.diff$stage)
 res.cox <- coxph(Surv(surv, dead.alive) ~ mom1 + mom2 + mom3 + mom4 + 
                    age + pixelcount + stage + sex, data = tab.diff)
 summary(res.cox)
+
+#Getting stats for manuscript
+summary(coxph(Surv(surv, dead.alive) ~ pixelcount, data = tab.diff))
 
 #SHoenfeld resideual graph
 schoenfeld <- ggcoxzph(cox.zph(res.cox), font.main = 6,font.submain = 6,

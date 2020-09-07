@@ -55,6 +55,9 @@ name2 <- sapply(name1, function (x) gsub(".npy.csv", "" , x))
 #Naming the list
 names(hom.list) <- name2
 
+#saving the formatted phom
+saveRDS(hom.list, "formatted_phom_matrix.rds")
+
 
 #Function to count total features that exist at each threshold value
 cubical.total.feat.counter <- function(phom, min, max, res) {
