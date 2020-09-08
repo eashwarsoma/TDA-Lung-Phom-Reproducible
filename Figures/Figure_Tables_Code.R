@@ -41,6 +41,22 @@ slice <- img[[13]]
 #Viewing actual slice
 tum <- image(slice, col=grey(0:2041/2041), axes=FALSE, xlab="", ylab="", mar = c(0,0,0,0))
 
+#Viewing all the images
+par(mfrow=c(5,5), mar = c(0, 0, 0, 0))
+for (i in 1:length(img)) {
+  image(img[[i]], col=grey(0:2041/2041), axes=FALSE, xlab="", ylab="", mar = c(0,0,0,0))
+}
+dev.off()
+
+#Viewing all the images, but binary
+img.bin <- lapply(img, function (x) ifelse(x >= -34, 1, 0))
+par(mfrow=c(5,5), mar = c(0, 0, 0, 0))
+for (i in 1:length(img.bin)) {
+  image(img.bin[[i]], col=grey(0:2041/2041), axes=FALSE, xlab="", ylab="", mar = c(0,0,0,0))
+}
+dev.off()
+
+
 #Choosing 4 random HU values to create the binary images 
 HUfilt1 <- -900
 HUfilt2 <- -34
@@ -374,9 +390,9 @@ all.surv.moments.melt.rem.zero <- all.surv.moments.melt.rem.zero %>% mutate(ymin
                                                  moment == "Moment 4" ~ 90))
 
 
-
+options(scipen = 1)
 box.whisk <- ggplot(data = all.surv.moments.melt.rem.zero, aes(x = surv.group, y = feature.count)) +
-  geom_boxplot(outlier.shape = 18) + facet_wrap(~moment, scale = "free") + 
+  geom_boxplot(outlier.shape = 18, notch = TRUE) + facet_wrap(~moment, scale = "free") + 
   scale_y_continuous(expand = expand_scale(mult = c(.03, .15), add = c(0, 0)), trans = "log10") +
   theme_bw() +   
   labs(title = "Box Plot of Feature Curve Moments", x = "Survival Group", y = "Moment Value") + 
@@ -406,14 +422,7 @@ ggsave("./Figures/box.whisk.png", plot = box.whisk,
        scale = 1, width = 8, height = 6, units = "in",
        dpi = 400, limitsize = TRUE)
 
-
-
-
-
-
-
-
-
+options(scipen = 10)
 
 
 ####Supplement: Stat Compare Group Moment####
