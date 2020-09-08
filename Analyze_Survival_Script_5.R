@@ -400,8 +400,8 @@ corgplot <- ggplot(data=tab.diff, aes(x=mom1, y=pixelcount)) +
   geom_point(size=.5, shape=21) +
   annotate(geom="text", x=3, y=54, label=paste("R^2=", cor), color="black") +
   theme_bw() +   
-  labs(title = "Image Size vs Moment 1", x = "Moment 1 of all Feature Curves", 
-       y = "Tumor Image Sizes of All Feature Curves") + 
+  labs(title = "Image Size vs Moment 1", x = "Scaled Moment 1 of all Feature Curves", 
+       y = "Scaled Tumor Image Sizes of All Feature Curves") + 
   theme(plot.title = element_text(hjust = 0.5))
 corgplot
   
@@ -523,7 +523,7 @@ vars.sup <- c("mom1", "mom2", "mom3", "mom4", "age", "pixelcount", "stage", "sex
 uv.list.holder.sup <- list()
 for (i in 1:length(vars.sup)) {
   form <- as.formula(paste("Surv(surv, dead.alive) ~ ", vars.sup[i], sep = ""))
-  cox.uv <- coxph(form, data = tab.diff)
+  cox.uv <- coxph(form, data = tab.supp)
   UV.Cox.row <- data.frame(cbind(exp(coefficients(cox.uv)), 
                                  exp(confint(cox.uv)),
                                  summary(cox.uv)$coefficients[, 5]))
