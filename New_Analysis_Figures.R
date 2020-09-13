@@ -220,7 +220,7 @@ surv.curve.plot <- ggplot(comb.data, aes(filtration, features)) +
   geom_point() + 
   facet_wrap(~survival_group) +
   theme_bw() + 
-  labs(title = "Median Feature Curves For Survival Groups", x = "Filtration (Normalized HU)", 
+  labs(title = "Median 0D Feature Curves For Survival Groups", x = "Filtration (Normalized HU)", 
        y = "Median Feature Count") + 
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(size = 5))
@@ -472,6 +472,15 @@ tab$surv <- as.numeric(as.character(tab$surv))
 tab$dead.alive <- as.numeric(as.character(tab$dead.alive))
 tab$age <- as.numeric(as.character(tab$age))
 tab$pixelcount <- as.numeric(as.character(tab$pixelcount))
+tab$f0.mom1 <- as.numeric(as.character(tab$f0.mom1))
+tab$f0.mom2 <- as.numeric(as.character(tab$f0.mom2))
+tab$f0.mom3 <- as.numeric(as.character(tab$f0.mom3))
+tab$f0.mom4 <- as.numeric(as.character(tab$f0.mom4))
+
+#Data for table 1
+tab.one.dat <- tab[-which(tab$stage == "0"), ]
+
+#Scaling 0 to 50
 tab$f0.mom1 <- normalize(as.numeric(as.character(tab$f0.mom1))) * 50
 tab$f0.mom2 <- normalize(as.numeric(as.character(tab$f0.mom2))) * 50
 tab$f0.mom3 <- normalize(as.numeric(as.character(tab$f0.mom3))) * 50
@@ -714,7 +723,7 @@ colnames(med.surv) <- c("strata", "median", "lowerlim", "upperlim")
 log.rank.all <- survdiff(Surv(surv, dead.alive) ~ quart, data = tab.KM)
 pval.tot <- 1 - pchisq(log.rank.all$chisq, length(log.rank.all$n) - 1)
 
-#Pairwise post hoc
+#Pairwise post hoc, stats for manuscript
 tab.KM %>% subset(quart == "First Moment 0-25 percentile" | 
                      quart == "First Moment 75-100 percentile") %>% 
   survdiff(Surv(surv, dead.alive) ~ quart, data = .)
@@ -775,7 +784,7 @@ kmcurve <- autoplot(fit, data = tab.KM, conf.int = F, censor.shape = "|",
   theme_classic() + 
   theme(legend.justification=c(1,1), legend.position=c(1,.88),
         plot.title = element_text(hjust = 0.5)) +   
-  labs(title = "KM Curves for Zero Feature Curve Scaled Moment 1 Groups", x = "Survival Time (days)", 
+  labs(title = "KM Curves for 0D Feature Curve Scaled Moment 1 Groups", x = "Survival Time (days)", 
        y = "Survival Probability", color = "Zero Feature Curve\nScaled Moment 1 Quartiles") + 
   guides(colour = guide_legend(override.aes = list(shape = 15)))
 kmcurve
@@ -964,7 +973,7 @@ export_svg(prism) %>% charToRaw %>%
 
 
 ####Table One####
-tad.pats <- tab.diff
+tad.pats <- tab.one.dat
 tad.pats$cohort <- NA
 
 #First 421 patients are in rad, remaining are in radg
