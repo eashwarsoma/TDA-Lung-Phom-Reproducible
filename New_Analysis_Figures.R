@@ -920,6 +920,10 @@ curvplot <- ggplot(topfeatcurv.melt, aes(x = filtration, y = feature.count,
   guides(color = guide_legend(override.aes = list(alpha = c(0.2, 1, 0.2, 0.2))))
 curvplot
 
+
+#Data for presentation
+raw.moment(topfeatcurv[, 2], 4)
+
 PNG <- readPNG("./Figures/bitmaps.png")
 
 #creating layout
