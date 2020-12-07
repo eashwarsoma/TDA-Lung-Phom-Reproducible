@@ -222,8 +222,11 @@ surv.curve.plot <- ggplot(comb.data, aes(filtration, features)) +
   theme_bw() + 
   labs(title = "Median 0D Feature Curves For Survival Groups", x = "Filtration (Normalized HU)", 
        y = "Median Feature Count") + 
-  theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(size = 5))
+  theme(plot.title = element_text(hjust = 0.5, size = 14),
+        axis.text.x = element_text(size = 11),
+        axis.text.y = element_text(size = 11),
+        strip.text.x = element_text(size = 11),
+        axis.title=element_text(size=11))
 surv.curve.plot
 
 
@@ -665,7 +668,11 @@ coxforest <- ggplot(data=Cox.tot.mod, aes(x=label, y=`Hazard Ratio`, ymin=`Lower
   theme_bw() +   
   labs(title = "Survival Forest Plot", x = "Cox Variable", 
        y = "log(Hazard Ratio) (95% CI)") + 
-  theme(plot.title = element_text(hjust = 0.5))+ 
+  theme(plot.title = element_text(hjust = 0.5, size = 16),
+        axis.text.x = element_text(size = 13),
+        axis.text.y = element_text(size = 13),
+        strip.text.x = element_text(size = 13),
+        axis.title=element_text(size=13))+ 
   scale_x_discrete(labels = rev(c(expression(bold("Stage IIIb vs I")),
                                   expression(bold("Stage IIIa vs I")),
                                   "Stage II vs I",
@@ -869,6 +876,8 @@ filt3norm <- (HUfilt3 - abs.min)/(abs.max - abs.min)
 
 
 #Getting the barcode diagram of this phom
+#The reason for the oddly specific y labels that are blank was to get alignment of the
+#Colored vertical lines in the figure
 phom.barcode <- phom.mat[[1]]
 barcode <- plot_barcode(as.matrix(phom.barcode)) + labs(x = "Filtration (Normalized HU)",y = " ", 
                                                         color = "Dimension") + 
@@ -876,14 +885,17 @@ barcode <- plot_barcode(as.matrix(phom.barcode)) + labs(x = "Filtration (Normali
   geom_vline(aes(xintercept = filt2norm), color = "#C39E05", size = 1) + 
   geom_vline(aes(xintercept = filt3norm), color = "#9500DA", size = 1) + 
   theme(legend.position=c(.8, .5)) +
-  theme(axis.text.x = element_text(size = 6),
-        legend.text = element_text(size = 9),
-        axis.line.y = element_line(size = 3, colour = "white", linetype=2),
+  theme(axis.text.x = element_text(size =11),
+        axis.text.y = element_text(size = 3.55, color = "white"),
+        legend.text = element_text(size = 11),
+        axis.title=element_text(size=11),
+        axis.line.y = element_line(size = 1, colour = "white", linetype=2),
         plot.margin = unit(c(5.5, 5.5, 5.5, 20.5), "pt")) +
-  scale_x_continuous(breaks = c(0, .2, .4, .6, .8, 1), limits = c(0,1), expand = c(0,0)) +
+  scale_x_continuous(breaks = c(0, .2, .4, .6, .8, 1), limits = c(0,1.01), expand = c(0,0)) +
   scale_y_continuous(position = "left", expand = c(0,0)) 
-
 barcode
+
+
 
 #Getting all the topological feature curve representation
 topfeatcurv <- complete.lung.results[[1]][["Tot.Feat.Count"]]
@@ -907,16 +919,17 @@ curvplot <- ggplot(topfeatcurv.melt, aes(x = filtration, y = feature.count,
   scale_color_manual(values = group.colors) +
   scale_alpha_manual(values = c(0.2, 1, 0.2, 0.2)) +
   labs(title = NULL, x = "Filtration (Normalized HU)", 
-       y = "Topological Feature Curves", color = "Feature Dimension") + 
-  theme(axis.text.x = element_text(size = 6),
-        axis.text.y = element_text(size = 6),
+       y = "Number of Features", color = "Feature Dimension") + 
+  theme(axis.text.x = element_text(size = 11),
+        axis.text.y = element_text(size = 11),
+        axis.title=element_text(size=11),
         legend.position = c(0.85, 0.75),
         legend.background=element_blank()) + 
   guides(alpha = "none") +
   geom_vline(aes(xintercept = filt1norm), color = "#08FFF0", size = 1) + 
   geom_vline(aes(xintercept = filt2norm), color = "#C39E05", size = 1) + 
   geom_vline(aes(xintercept = filt3norm), color = "#9500DA", size = 1) +
-  scale_x_continuous(breaks = c(0, .2, .4, .6, .8, 1), expand = c(0,0)) + 
+  scale_x_continuous(breaks = c(0, .2, .4, .6, .8, 1), expand = c(0,0), limits = c(0,1.01)) + 
   guides(color = guide_legend(override.aes = list(alpha = c(0.2, 1, 0.2, 0.2))))
 curvplot
 
@@ -932,11 +945,13 @@ lay <- rbind(c(1,1,2,2),
              c(1,1,3,3),
              c(1,1,3,3))
 
-png(file = "./Figures/cubcomp.png", width = 10, height = 8, units = "in", res = 800)
+png(file = "./Figures/cubcomp.png", width = 12, height = 8, units = "in", res = 800)
 grid.arrange(rasterGrob(PNG, interpolate=TRUE, just = "left"), 
              as.grob(barcode), as.grob(curvplot), layout_matrix = lay)
 dev.off()
 #I then manually edited this image after to crop white space and add astericks
+#After manually editing, I resaved the image as cubcomp_mod so that it's not 
+#Overwritten when the code is rerun
 
 
 
