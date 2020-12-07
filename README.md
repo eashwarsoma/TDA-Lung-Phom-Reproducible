@@ -1,8 +1,6 @@
 # TDA-Lung-Phom-Reproducible
 Reproducible repository for "Persistent Homology of Tumor CT Scans Predicts Survival In Lung Cancer"
 
-To reproduce results, first clone this repository to your computer. Next, download the Radiogenomics_DICOM and Radiomics_DICOM folders at these links (insert links). Move these folders to the same directory as the cloned repository. These DICOMs are directly from the TCIA and have been rearranged into a folder structure compatible with the code. 
-
 To replicate the results, run the following 5 scripts in the stated order:
 1. Segment_Script_1.R
 2. Create_Numpy_Script_2.R
