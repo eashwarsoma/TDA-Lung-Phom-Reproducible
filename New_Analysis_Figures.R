@@ -289,7 +289,7 @@ box.whisk.stat
 
 
 ggsave("./Figures/box.whisk.png", plot = box.whisk.stat,
-       scale = 1, width = 8, height = 6, units = "in",
+       scale = 1, width = 5.45, height = 5.45, units = "in",
        dpi = 400, limitsize = TRUE)
 
 options(scipen = 10)
@@ -513,15 +513,15 @@ form <- as.formula(paste("Surv(surv, dead.alive) ~", paste(vars, collapse = "+")
 res.cox <- coxph(form, data = tab.diff)
 
 #SHoenfeld resideual graph
-schoenfeld <- ggcoxzph(cox.zph(res.cox), font.main = 6,font.submain = 6,
-                       font.caption = 6,font.x = 6,font.y = 6,
-                       font.tickslab = 6,font.legend = 6)
+schoenfeld <- ggcoxzph(cox.zph(res.cox), font.main = 10,font.submain = 10,
+                       font.caption = 10,font.x = 8,font.y = 10,
+                       font.tickslab = 10,font.legend = 10)
 
 schoenfeld
 
 ggsave("./Figures/schoenfeld.png", 
        arrangeGrob(grobs = schoenfeld), scale = 1, 
-       width = 8, height = 6, units = "in",
+       width = 10, height = 6, units = "in",
        dpi = 400, limitsize = TRUE)
 
 #Correlation plot between moment 1 and tumor image size, Supplement
@@ -536,7 +536,7 @@ corgplot <- ggplot(data=tab.diff, aes(x=f0.mom1, y=pixelcount)) +
 corgplot
 
 ggsave("./Figures/cormom1size.png", plot = corgplot,
-       scale = 1, width = 8, height = 6, units = "in",
+       scale = 1, width = 6, height = 4, units = "in",
        dpi = 400, limitsize = TRUE)
 
 
