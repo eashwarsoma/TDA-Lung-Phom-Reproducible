@@ -25,6 +25,8 @@ library(png)
 library(rstatix)
 library(ggfortify)
 
+
+
 ####Reading in Data####
 #Reading in the fully formatted results
 complete.lung.results <- readRDS("complete_lung_results.rds")
@@ -215,18 +217,19 @@ comb.data$survival_group <- factor(comb.data$survival_group,
                                    levels = c("surv25", "surv50", "surv75", "surv100"))
 levels(comb.data$survival_group) <- c("<303 days", "303 to 699 days", 
                                       "699 to 1634 days", ">1634 days")
-
+#Setting a scale factor for font sizes
+scale_factor = 1.35
 surv.curve.plot <- ggplot(comb.data, aes(filtration, features)) +
   geom_point() + 
   facet_wrap(~survival_group) +
   theme_bw() + 
   labs(title = "Median 0D Feature Curves For Survival Groups", x = "Filtration (Normalized HU)", 
        y = "Median Feature Count") + 
-  theme(plot.title = element_text(hjust = 0.5, size = 14),
-        axis.text.x = element_text(size = 11),
-        axis.text.y = element_text(size = 11),
-        strip.text.x = element_text(size = 11),
-        axis.title=element_text(size=11))
+  theme(plot.title = element_text(hjust = 0.5, size = scale_factor*14),
+        axis.text.x = element_text(size = scale_factor*10),
+        axis.text.y = element_text(size = scale_factor*10),
+        strip.text.x = element_text(size = scale_factor*11),
+        axis.title=element_text(size=scale_factor*11))
 surv.curve.plot
 
 
@@ -246,7 +249,7 @@ levels(zero.feat.mom$group) <- c("<303 days", "303 to 699 days",
 levels(zero.feat.mom$moment) <- c("First Moment (AUC)", "Second Moment", 
                                       "Third Moment", "Fourth Moment")
 
-
+scale_factor = 1.00
 options(scipen = 1)
 box.whisk <- ggplot(data = zero.feat.mom, aes(x = group, y = value)) +
   geom_boxplot(outlier.shape = 18, notch = TRUE) + facet_wrap(~moment, scale = "free") + 
@@ -256,7 +259,7 @@ box.whisk <- ggplot(data = zero.feat.mom, aes(x = group, y = value)) +
   scale_x_discrete(labels = c("<303\ndays", "303 to\n699 days", 
                               "699 to\n1634 days", ">1634\ndays")) + 
   theme(plot.title = element_text(hjust = 0.5),
-        axis.text.x = element_text(size = 8))
+        axis.text.x = element_text(size = scale_factor*8))
 
 zero.feat.mom %>%
   group_by(moment) %>%
@@ -513,9 +516,14 @@ form <- as.formula(paste("Surv(surv, dead.alive) ~", paste(vars, collapse = "+")
 res.cox <- coxph(form, data = tab.diff)
 
 #SHoenfeld resideual graph
-schoenfeld <- ggcoxzph(cox.zph(res.cox), font.main = 10,font.submain = 10,
-                       font.caption = 10,font.x = 8,font.y = 10,
-                       font.tickslab = 10,font.legend = 10)
+scale_factor = 1.00
+schoenfeld <- ggcoxzph(cox.zph(res.cox), font.main = scale_factor*10,
+                       font.submain = scale_factor*10,
+                       font.caption = scale_factor*10,
+                       font.x = scale_factor*8,
+                       font.y = scale_factor*10,
+                       font.tickslab = scale_factor*10,
+                       font.legend = scale_factor*10)
 
 schoenfeld
 
@@ -774,7 +782,7 @@ stat.km.df$group2 <- case_when(stat.km.df$group2 == med.surv$strata[1] ~ med.sur
 
 stat.km.df$p.adj <- signif(stat.km.df$p.adj, 2)
 
-
+#KM Curves  graph
 kmcurve <- autoplot(fit, data = tab.KM, conf.int = F, censor.shape = "|", 
                     censor.size = 2) + 
   geom_vline(aes(xintercept = median, color = strata), alpha = .5, data = med.surv) +
@@ -790,7 +798,12 @@ kmcurve <- autoplot(fit, data = tab.KM, conf.int = F, censor.shape = "|",
                                       med.surv$upperlim[4], ")", sep = ""))) + 
   theme_classic() + 
   theme(legend.justification=c(1,1), legend.position=c(1,.88),
-        plot.title = element_text(hjust = 0.5)) +   
+        plot.title = element_text(hjust = 0.5, size = 18), 
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 16),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18),
+        axis.title = element_text(size = 18)) + 
   labs(title = "KM Curves for 0D Feature Curve Scaled Moment 1 Groups", x = "Survival Time (days)", 
        y = "Survival Probability", color = "Zero Feature Curve\nScaled Moment 1 Quartiles") + 
   guides(colour = guide_legend(override.aes = list(shape = 15)))
@@ -798,9 +811,9 @@ kmcurve
 
 
 kmcurve.stat <- kmcurve + stat_pvalue_manual(stat.km.df, label = "p.adj", 
-                                        y.position = c(1, .85), 
-                                        size = 3, hide.ns = TRUE, bracket.nudge.y = .1, tip.length = 0) +
-  annotate("text", x = 85, y = .1, size = 3,
+                                        y.position = c(.8, .65), 
+                                        size = 4, hide.ns = TRUE, bracket.nudge.y = .1, tip.length = 0) +
+  annotate("text", x = 140, y = .1, size = 4,
            label = paste("p = ", format(signif(pval.tot, 2), scientific = FALSE)))
 
 kmcurve.stat
@@ -854,13 +867,13 @@ slice.filt3 <- ifelse(slice >= HUfilt3, 1, 0)
 png(file = "./Figures/bitmaps.png", width = 3, height = 8, units = "in", res = 800)
 par(mfrow=c(4,1), mar = c(1,1.8,0.4,0))
 image(slice, col=grey(0:2041/2041), axes=FALSE, ylab="Slice 13", 
-      xlab="", col.lab = "black", cex.lab=1.5, mgp=c(.2,1,0))
+      xlab="", col.lab = "black", cex.lab=2, mgp=c(.2,1,0))
 image(slice.filt1, col=grey(0:2041/2041), axes=FALSE, ylab="HU: -900", 
-      xlab="", col.lab = "#08FFF0", cex.lab=1.5, mgp=c(.2,1,0))
+      xlab="", col.lab = "#08FFF0", cex.lab=2, mgp=c(.2,1,0))
 image(slice.filt2, col=grey(0:2041/2041), axes=FALSE, ylab="HU: -34", 
-      xlab="", col.lab = "#C39E05", cex.lab=1.5, mgp=c(.2,1,0))
+      xlab="", col.lab = "#C39E05", cex.lab=2, mgp=c(.2,1,0))
 image(slice.filt3, col=grey(0:2041/2041), axes=FALSE, ylab="HU: 200", 
-      xlab="", col.lab = "#9500DA", cex.lab=1.5, mgp=c(.2,1,0))
+      xlab="", col.lab = "#9500DA", cex.lab=2, mgp=c(.2,1,0))
 while (!is.null(dev.list()))  dev.off()
 
 
@@ -870,6 +883,7 @@ while (!is.null(dev.list()))  dev.off()
 abs.max <- 3071
 abs.min <- -1342
 
+#Calculated for initial figure, not using anymore
 filt1norm <- (HUfilt1 - abs.min)/(abs.max - abs.min)
 filt2norm <- (HUfilt2 - abs.min)/(abs.max - abs.min)
 filt3norm <- (HUfilt3 - abs.min)/(abs.max - abs.min)
@@ -878,20 +892,27 @@ filt3norm <- (HUfilt3 - abs.min)/(abs.max - abs.min)
 #Getting the barcode diagram of this phom
 #The reason for the oddly specific y labels that are blank was to get alignment of the
 #Colored vertical lines in the figure
+scale_factor = 1.2
 phom.barcode <- phom.mat[[1]]
-barcode <- plot_barcode(as.matrix(phom.barcode)) + labs(x = "Filtration (Normalized HU)",y = " ", 
-                                                        color = "Dimension") + 
-  geom_vline(aes(xintercept = filt1norm), color = "#08FFF0", size = 1) + 
-  geom_vline(aes(xintercept = filt2norm), color = "#C39E05", size = 1) + 
-  geom_vline(aes(xintercept = filt3norm), color = "#9500DA", size = 1) + 
+#Using HU units instead of normalized x axis to make figure less confusing 
+phom.barcode[["birth"]] <- phom.barcode[["birth"]]*(abs.max-abs.min) + abs.min
+phom.barcode[["death"]] <- phom.barcode[["death"]]*(abs.max-abs.min) + abs.min
+
+barcode <- plot_barcode(as.matrix(phom.barcode)) + 
+  labs(x = "Filtration (HU)",y = " ", color = "Dimension") + 
+  geom_vline(aes(xintercept = HUfilt1), color = "#08FFF0", size = 1) + 
+  geom_vline(aes(xintercept = HUfilt2), color = "#C39E05", size = 1) + 
+  geom_vline(aes(xintercept = HUfilt3), color = "#9500DA", size = 1) + 
   theme(legend.position=c(.8, .5)) +
-  theme(axis.text.x = element_text(size =11),
-        axis.text.y = element_text(size = 3.55, color = "white"),
-        legend.text = element_text(size = 11),
-        axis.title=element_text(size=11),
+  theme(axis.text.x = element_text(size = scale_factor*11),
+        axis.text.y = element_text(size = scale_factor*3.55, color = "white"),
+        legend.text = element_text(size = scale_factor*11*1.2),
+        legend.title = element_text(size = scale_factor*11*1.2),
+        axis.title=element_text(size=scale_factor*11),
         axis.line.y = element_line(size = 1, colour = "white", linetype=2),
         plot.margin = unit(c(5.5, 5.5, 5.5, 20.5), "pt")) +
-  scale_x_continuous(breaks = c(0, .2, .4, .6, .8, 1), limits = c(0,1.01), expand = c(0,0)) +
+  scale_x_continuous(breaks = c(-1500, -1000, -500, 0, 500, 1000, 1500, 2000), 
+                     limits = c(-1500, 2200), expand = c(0,0)) +
   scale_y_continuous(position = "left", expand = c(0,0)) 
 barcode
 
@@ -913,23 +934,30 @@ levels(topfeatcurv.melt$feature.type) <- c("Total Features", "0D Features", "1D 
 
 group.colors <- c("#000000", "#f15f36", "#25af35", "#5388fb")
 
+#Using HU units instead of normalized x axis to make figure less confusing 
+topfeatcurv.melt[["filtration"]] <- topfeatcurv.melt[["filtration"]]*(abs.max-abs.min) + abs.min
+
+scale_factor = 1.2
 curvplot <- ggplot(topfeatcurv.melt, aes(x = filtration, y = feature.count, 
                                          color = feature.type, alpha = feature.type)) +
    geom_path(size = 1) + theme_bw() + 
   scale_color_manual(values = group.colors) +
   scale_alpha_manual(values = c(0.2, 1, 0.2, 0.2)) +
-  labs(title = NULL, x = "Filtration (Normalized HU)", 
+  labs(title = NULL, x = "Filtration (HU)", 
        y = "Number of Features", color = "Feature Dimension") + 
-  theme(axis.text.x = element_text(size = 11),
-        axis.text.y = element_text(size = 11),
-        axis.title=element_text(size=11),
-        legend.position = c(0.85, 0.75),
+  theme(axis.text.x = element_text(size = scale_factor*11),
+        axis.text.y = element_text(size = scale_factor*11),
+        axis.title=element_text(size=scale_factor*11),
+        legend.text = element_text(size = scale_factor*11*1.2),
+        legend.title = element_text(size = scale_factor*11*1.2),
+        legend.position = c(0.75, 0.65),
         legend.background=element_blank()) + 
   guides(alpha = "none") +
-  geom_vline(aes(xintercept = filt1norm), color = "#08FFF0", size = 1) + 
-  geom_vline(aes(xintercept = filt2norm), color = "#C39E05", size = 1) + 
-  geom_vline(aes(xintercept = filt3norm), color = "#9500DA", size = 1) +
-  scale_x_continuous(breaks = c(0, .2, .4, .6, .8, 1), expand = c(0,0), limits = c(0,1.01)) + 
+  geom_vline(aes(xintercept = HUfilt1), color = "#08FFF0", size = 1) + 
+  geom_vline(aes(xintercept = HUfilt2), color = "#C39E05", size = 1) + 
+  geom_vline(aes(xintercept = HUfilt3), color = "#9500DA", size = 1) +
+  scale_x_continuous(breaks = c(-1500, -1000, -500, 0, 500, 1000, 1500, 2000), 
+                     limits = c(-1500, 2200), expand = c(0,0)) + 
   guides(color = guide_legend(override.aes = list(alpha = c(0.2, 1, 0.2, 0.2))))
 curvplot
 
@@ -1000,10 +1028,8 @@ tad.pats$cohort <- NA
 tad.pats$cohort[1:421] <- "NSCLC-Radiomics"
 tad.pats$cohort[422:559] <- "NSCLC-Radiogenomics"
 
-#Removing first column
-tad.pats <- tad.pats[,-1]
 
-colnames(tad.pats) <- c("Vital Status", "Moment 1", "Moment 2", 
+colnames(tad.pats) <- c("Survival/FU","Vital Status", "Moment 1", "Moment 2", 
                         "Moment 3", "Moment 4", "Tumor Image Size", "Age", 
                         "Stage", "Sex", "Cohort")
 
@@ -1015,7 +1041,13 @@ tad.pats$`Cohort` <- as.factor(tad.pats$`Cohort`)
 
 tad.pats$Sex <- factor(tad.pats$Sex, levels=rev(levels(tad.pats$Sex))) 
 
+tad.pats$`Survival/FU`
+tad.pats$`Vital Status`
 
+#creating a variable for follow up for alive patients
+#If patient died, Null is placed so value is ignored in table 1
+tad.pats$followup <- ifelse(tad.pats$`Vital Status` == "Alive", 
+                            tad.pats$`Survival/FU`, NA)
 
 
 #Printing some stats for manuscript
@@ -1056,6 +1088,28 @@ table.mat.df <- table.mat.df[,-5]
 colnames(table.mat.df) <- c("Whole Cohort", "NSCLC-Radiogenomics", "NSCLC-Radiomics", 
                             "p-value", "Proportion Missing", "label")
 
+#Creating a second table 1 with just the alive patients to get median follow up
+tabone.n <- CreateTableOne(vars = c("followup"),
+                         strata = "Cohort", 
+                         addOverall = TRUE, 
+                         data = subset(tad.pats, `Vital Status` == "Alive"))
+
+table.mat.n <- print(tabone.n, nonnormal = c("followup"), missing = TRUE)
+
+#need only the second row
+table.mat.df.n <- as.data.frame(table.mat.n)[2,]
+
+table.mat.df.n$label <- c("Followup For Alive Patients")
+
+#Removing the test column
+table.mat.df.n <- table.mat.df.n[,-5]
+
+
+colnames(table.mat.df.n) <- c("Whole Cohort", "NSCLC-Radiogenomics", "NSCLC-Radiomics", 
+                            "p-value", "Proportion Missing", "label")
+
+#Combinging this with the other table 1
+table.mat.df <- rbind(table.mat.df, table.mat.df.n)
 
 
 #Modifying the really big numbers to be in sci-not format 
